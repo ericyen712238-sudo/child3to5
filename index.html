@@ -72,6 +72,12 @@
             content: ''; background: #fff; width: 30px; height: 30px; position: absolute; top: -15px; left: 10px; border-radius: 100px;
         }
         .cloud:after { width: 20px; height: 20px; top: -10px; left: 30px; }
+
+        /* 拼圖樣式 */
+        .puzzle-piece {
+            transition: transform 0.2s;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
@@ -680,26 +686,87 @@
 
             const generatePuzzleImage = useCallback((card) => {
                 const canvas = document.createElement('canvas');
-                const size = 500;
+                const size = 600; // 高解析度
                 canvas.width = size;
                 canvas.height = size;
                 const ctx = canvas.getContext('2d');
 
-                ctx.fillStyle = card.color || '#ffffff';
+                // 1. 基礎漸層背景
+                const gradient = ctx.createLinearGradient(0, 0, size, size);
+                gradient.addColorStop(0, card.color);
+                gradient.addColorStop(1, '#ffffff');
+                ctx.fillStyle = gradient;
                 ctx.fillRect(0, 0, size, size);
 
+                // 2. 隨機花紋裝飾
+                const patternType = Math.floor(Math.random() * 4); 
+                ctx.save();
+                ctx.globalAlpha = 0.15; // 淡化花紋
+                
+                if (patternType === 0) { // 點點
+                    ctx.fillStyle = '#000000';
+                    for (let i = 0; i < 50; i++) {
+                        const x = Math.random() * size;
+                        const y = Math.random() * size;
+                        const r = Math.random() * 30 + 10;
+                        ctx.beginPath();
+                        ctx.arc(x, y, r, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                } else if (patternType === 1) { // 條紋
+                    ctx.strokeStyle = '#000000';
+                    ctx.lineWidth = 20;
+                    for (let i = -size; i < size * 2; i += 60) {
+                        ctx.beginPath();
+                        ctx.moveTo(i, 0);
+                        ctx.lineTo(i - size, size); 
+                        ctx.stroke();
+                    }
+                } else if (patternType === 2) { // 裝飾符號
+                    ctx.font = '60px serif';
+                    const decors = ['⭐', '❤️', '☁️', '✨'];
+                    const decor = decors[Math.floor(Math.random() * decors.length)];
+                    for (let i = 0; i < 20; i++) {
+                        ctx.fillText(decor, Math.random() * size, Math.random() * size);
+                    }
+                } else { // 隨機方塊 (彩色碎紙)
+                    const colors = ['#ff0000', '#00ff00', '#0000ff', '#ffff00'];
+                    for(let i=0; i<100; i++) {
+                        ctx.fillStyle = colors[Math.floor(Math.random()*colors.length)];
+                        ctx.fillRect(Math.random()*size, Math.random()*size, 20, 20);
+                    }
+                }
+                ctx.restore();
+
+                // 3. 繪製主要內容 (陰影增強立體感)
+                ctx.shadowColor = "rgba(0,0,0,0.3)";
+                ctx.shadowBlur = 20;
+                ctx.shadowOffsetX = 5;
+                ctx.shadowOffsetY = 5;
+
+                // Emoji
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
-                ctx.font = '200px serif';
-                ctx.fillText(card.emoji, size / 2, size / 2 - 40);
+                ctx.font = '250px serif';
+                ctx.fillText(card.emoji, size / 2, size / 2 - 50);
 
+                // 中文文字
+                ctx.shadowBlur = 0;
+                ctx.shadowOffsetX = 2;
+                ctx.shadowOffsetY = 2;
                 ctx.fillStyle = '#333333';
-                ctx.font = 'bold 60px "Noto Sans TC"';
-                ctx.fillText(card.text, size / 2, size / 2 + 120);
+                ctx.font = 'bold 80px "Noto Sans TC"';
+                ctx.fillText(card.text, size / 2, size / 2 + 140);
                 
-                ctx.fillStyle = '#666666';
-                ctx.font = '40px sans-serif';
-                ctx.fillText(card.sub, size / 2, size / 2 + 180);
+                // 英文文字
+                ctx.fillStyle = '#555555';
+                ctx.font = 'bold 50px sans-serif';
+                ctx.fillText(card.sub, size / 2, size / 2 + 210);
+
+                // 白色邊框
+                ctx.strokeStyle = '#ffffff';
+                ctx.lineWidth = 20;
+                ctx.strokeRect(0,0,size,size);
 
                 return canvas.toDataURL();
             }, []);
